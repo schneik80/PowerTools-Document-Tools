@@ -11,6 +11,8 @@ from .dochistory import entry as dochistory
 from .docinfo import entry as docinfo
 from .docopen import entry as docopen
 from .favorites import entry as favorites
+
+# from .opendwg import entry as opendwg # Not ready for use
 from .versiondiff import entry as versiondiff
 from .versionmerge import entry as versionmerge
 
@@ -26,6 +28,7 @@ commands = [
     docinfo,
     docopen,
     favorites,
+    # opendwg,
     versiondiff,
     versionmerge,
 ]

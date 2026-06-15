@@ -2,7 +2,6 @@
 # Copyright (C) 2022-2026 IMA LLC
 
 import adsk.core
-import os
 from ...lib import fusionAddInUtils as futil
 from ... import config
 
@@ -16,8 +15,6 @@ TOGGLE_CMD_TOOLTIP = (
     "Toggle the automatic 'Show In Location' behavior that runs when a "
     "document is opened or activated."
 )
-
-ICON_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "")
 
 SETTING_KEY = "show_in_location_enabled"
 SETTING_DEFAULT = True
@@ -40,10 +37,6 @@ def _set_enabled(enabled: bool) -> None:
     settings = config.load_settings()
     settings[SETTING_KEY] = bool(enabled)
     config.save_settings(settings)
-
-
-def _toggle_label() -> str:
-    return f"Disable {CMD_NAME}" if _is_enabled() else f"Enable {CMD_NAME}"
 
 
 # ---------------------------------------------------------------------------
@@ -89,12 +82,19 @@ def _install_menu():
 
     toggle_cmd_def = ui.commandDefinitions.itemById(TOGGLE_CMD_ID)
     if not toggle_cmd_def:
-        toggle_cmd_def = ui.commandDefinitions.addButtonDefinition(
-            TOGGLE_CMD_ID, _toggle_label(), TOGGLE_CMD_TOOLTIP, ICON_FOLDER
+        # A check-box definition shows the on/off state directly in the menu; it
+        # starts checked/unchecked to match the persisted setting.
+        toggle_cmd_def = ui.commandDefinitions.addCheckBoxDefinition(
+            TOGGLE_CMD_ID, CMD_NAME, TOGGLE_CMD_TOOLTIP, _is_enabled()
         )
     else:
-        # Sync label with persisted state in case the setting changed while unloaded.
-        toggle_cmd_def.name = _toggle_label()
+        # Sync the check-box with the persisted state in case the setting changed
+        # while the add-in was unloaded.
+        checkbox = adsk.core.CheckBoxControlDefinition.cast(
+            toggle_cmd_def.controlDefinition
+        )
+        if checkbox:
+            checkbox.isChecked = _is_enabled()
 
     futil.add_handler(
         toggle_cmd_def.commandCreated,
@@ -120,21 +120,13 @@ def _uninstall_menu():
 
 
 def _toggle_cmd_created(args: adsk.core.CommandCreatedEventArgs):
-    futil.add_handler(
-        args.command.execute,
-        _toggle_cmd_execute,
-        local_handlers=local_handlers,
+    """Fires each time the user clicks the check-box. Read the new state and
+    persist it."""
+    checkbox = adsk.core.CheckBoxControlDefinition.cast(
+        args.command.parentCommandDefinition.controlDefinition
     )
-
-
-def _toggle_cmd_execute(args: adsk.core.CommandEventArgs):
-    new_state = not _is_enabled()
+    new_state = checkbox.isChecked
     _set_enabled(new_state)
-
-    toggle_cmd_def = ui.commandDefinitions.itemById(TOGGLE_CMD_ID)
-    if toggle_cmd_def:
-        toggle_cmd_def.name = _toggle_label()
-
     futil.log(f"{CMD_NAME}: behavior {'enabled' if new_state else 'disabled'} by user.")
 
 
