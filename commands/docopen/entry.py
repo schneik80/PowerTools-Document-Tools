@@ -82,7 +82,9 @@ def stop():
 
 
 def _install_menu():
-    settings_dropdown = config.get_or_create_pt_settings_dropdown()
+    settings_dropdown = futil.get_or_create_qat_file_flyout(
+        config.PT_SETTINGS_DROPDOWN_ID, config.PT_SETTINGS_DROPDOWN_NAME
+    )
     if not settings_dropdown:
         futil.log(f"{CMD_NAME}: could not locate QAT file menu; settings menu skipped.")
         return
@@ -107,7 +109,7 @@ def _install_menu():
 
 
 def _uninstall_menu():
-    config.remove_from_pt_settings_dropdown(TOGGLE_CMD_ID)
+    futil.remove_from_qat_file_flyout(TOGGLE_CMD_ID, config.PT_SETTINGS_DROPDOWN_ID)
 
     toggle_cmd_def = ui.commandDefinitions.itemById(TOGGLE_CMD_ID)
     if toggle_cmd_def:
