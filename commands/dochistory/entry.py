@@ -39,15 +39,19 @@ def start():
     )
     futil.add_handler(cmd_def.commandCreated, command_created)
     qat = ui.toolbars.itemById("QAT")
+    if qat is None:
+        futil.log(f"{CMD_NAME}: QAT toolbar not found; UI placement skipped.")
+        return
     qat.controls.addCommand(cmd_def, "save", True)
 
 
 def stop():
     qat = ui.toolbars.itemById("QAT")
-    command_control = qat.controls.itemById(CMD_ID)
+    if qat is not None:
+        command_control = qat.controls.itemById(CMD_ID)
+        if command_control:
+            command_control.deleteMe()
     command_definition = ui.commandDefinitions.itemById(CMD_ID)
-    if command_control:
-        command_control.deleteMe()
     if command_definition:
         command_definition.deleteMe()
 

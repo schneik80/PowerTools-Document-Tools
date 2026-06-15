@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2022-2026 IMA LLC
 
-import adsk.core
 import os
 import os.path
 import json
@@ -63,58 +62,3 @@ PT_SETTINGS_DROPDOWN_ID = "PTSettings"
 PT_SETTINGS_DROPDOWN_NAME = "PowerTools Settings"
 
 
-def get_or_create_pt_settings_dropdown():
-    """Return the shared PowerTools Settings dropdown in the QAT file menu, creating it if absent.
-
-    Uses DropDownControl.cast() — required for itemById to work correctly on
-    controls nested inside built-in menus like FileSubMenuCommand.
-    """
-    app = adsk.core.Application.get()
-    ui = app.userInterface
-    qat = ui.toolbars.itemById("QAT")
-    if not qat:
-        return None
-    file_dropdown = adsk.core.DropDownControl.cast(
-        qat.controls.itemById("FileSubMenuCommand")
-    )
-    if not file_dropdown:
-        return None
-
-    existing = file_dropdown.controls.itemById(PT_SETTINGS_DROPDOWN_ID)
-    if existing:
-        return adsk.core.DropDownControl.cast(existing)
-
-    return file_dropdown.controls.addDropDown(
-        PT_SETTINGS_DROPDOWN_NAME, "", PT_SETTINGS_DROPDOWN_ID
-    )
-
-
-def remove_from_pt_settings_dropdown(control_id: str) -> None:
-    """Remove *control_id* from the PowerTools Settings dropdown.
-
-    Deletes the dropdown itself when no children remain, so the last
-    command to unregister cleans up automatically.
-    """
-    app = adsk.core.Application.get()
-    ui = app.userInterface
-    qat = ui.toolbars.itemById("QAT")
-    if not qat:
-        return
-    file_dropdown = adsk.core.DropDownControl.cast(
-        qat.controls.itemById("FileSubMenuCommand")
-    )
-    if not file_dropdown:
-        return
-
-    pt_settings = adsk.core.DropDownControl.cast(
-        file_dropdown.controls.itemById(PT_SETTINGS_DROPDOWN_ID)
-    )
-    if not pt_settings:
-        return
-
-    ctrl = pt_settings.controls.itemById(control_id)
-    if ctrl:
-        ctrl.deleteMe()
-
-    if pt_settings.controls.count == 0:
-        pt_settings.deleteMe()

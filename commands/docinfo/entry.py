@@ -43,18 +43,12 @@ def start():
     futil.add_handler(cmd_def.commandCreated, command_created)
 
     # ******************************** Create Command Control ********************************
-    # Get target workspace for the command.
-    workspace = ui.workspaces.itemById(WORKSPACE_ID)
-
-    # Get target toolbar tab for the command and create the tab if necessary.
-    toolbar_tab = workspace.toolbarTabs.itemById(TAB_ID)
-    if toolbar_tab is None:
-        toolbar_tab = workspace.toolbarTabs.add(TAB_ID, TAB_NAME)
-
-    # Get target panel for the command and and create the panel if necessary.
-    panel = toolbar_tab.toolbarPanels.itemById(PANEL_ID)
+    panel = futil.get_or_create_panel(
+        WORKSPACE_ID, TAB_ID, TAB_NAME, PANEL_ID, PANEL_NAME, PANEL_AFTER
+    )
     if panel is None:
-        panel = toolbar_tab.toolbarPanels.add(PANEL_ID, PANEL_NAME, PANEL_AFTER, False)
+        futil.log(f"[{CMD_NAME}] Panel not available; UI placement skipped.")
+        return
 
     # Create the command control, i.e. a button in the UI.
     control = panel.controls.addCommand(cmd_def)
@@ -65,28 +59,11 @@ def start():
 
 # Executed when add-in is stopped.
 def stop():
-    # Get the various UI elements for this command
-    workspace = ui.workspaces.itemById(WORKSPACE_ID)
-    panel = workspace.toolbarPanels.itemById(PANEL_ID)
-    toolbar_tab = workspace.toolbarTabs.itemById(TAB_ID)
-    command_control = panel.controls.itemById(CMD_ID)
+    futil.remove_from_panel(WORKSPACE_ID, PANEL_ID, TAB_ID, CMD_ID)
+
     command_definition = ui.commandDefinitions.itemById(CMD_ID)
-
-    # Delete the button command control
-    if command_control:
-        command_control.deleteMe()
-
-    # Delete the command definition
     if command_definition:
         command_definition.deleteMe()
-
-    # Delete the panel if it is empty
-    if panel.controls.count == 0:
-        panel.deleteMe()
-
-    # Delete the tab if it is empty
-    if toolbar_tab.toolbarPanels.count == 0:
-        toolbar_tab.deleteMe()
 
 
 # Function to be called when a user clicks the corresponding button in the UI.

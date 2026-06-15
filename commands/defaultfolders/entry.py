@@ -90,11 +90,11 @@ def start():
     futil.add_handler(cmd_def.commandCreated, command_created)
 
     # **************** Add a button into the UI so the user can run the command. ****************
-    # Get the target workspace the button will be created in.
-    qat = ui.toolbars.itemById("QAT")
-
-    # Get the drop-down that contains the file related commands.
-    fileDropDown = qat.controls.itemById("FileSubMenuCommand")
+    # Get the QAT File drop-down via the guarded helper.
+    fileDropDown = futil.get_qat_file_dropdown()
+    if not fileDropDown:
+        futil.log(f"{CMD_NAME}: QAT File dropdown not found; UI placement skipped.")
+        return
 
     # Add a new button to the end of the file menu.
     control = fileDropDown.controls.addCommand(cmd_def)
@@ -102,17 +102,11 @@ def start():
 
 # Executed when add-in is stopped.
 def stop():
-    # Get the various UI elements for this command
-    qat = ui.toolbars.itemById("QAT")
-    fileDropDown = qat.controls.itemById("FileSubMenuCommand")
-    command_control = fileDropDown.controls.itemById(CMD_ID)
+    # Remove the button from the QAT File dropdown.
+    futil.remove_from_qat_file_dropdown(CMD_ID)
+
+    # Delete the command definition.
     command_definition = ui.commandDefinitions.itemById(CMD_ID)
-
-    # Delete the button command control
-    if command_control:
-        command_control.deleteMe()
-
-    # Delete the command definition
     if command_definition:
         command_definition.deleteMe()
 

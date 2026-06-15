@@ -92,23 +92,14 @@ def start():
     )
     futil.add_handler(cmd_def.commandCreated, command_created)
 
-    workspace = ui.workspaces.itemById(WORKSPACE_ID)
-    if workspace is None:
-        futil.log(f"[{CMD_NAME}] Workspace {WORKSPACE_ID} not found at start()")
-        return
-
-    # FusionDocTab is built-in to the Drawing workspace; we never create it.
-    toolbar_tab = workspace.toolbarTabs.itemById(TAB_ID)
-    if toolbar_tab is None:
-        futil.log(
-            f"[{CMD_NAME}] Tab '{TAB_ID}' not found on '{WORKSPACE_ID}' — "
-            f"skipping UI registration."
-        )
-        return
-
-    panel = toolbar_tab.toolbarPanels.itemById(PANEL_ID)
+    # FusionDocTab is built-in to the Drawing workspace; get_or_create_panel
+    # will find the existing tab without trying to create it.
+    panel = futil.get_or_create_panel(
+        WORKSPACE_ID, TAB_ID, config.drawing_panel_name, PANEL_ID, PANEL_NAME, PANEL_AFTER
+    )
     if panel is None:
-        panel = toolbar_tab.toolbarPanels.add(PANEL_ID, PANEL_NAME, PANEL_AFTER, False)
+        futil.log(f"[{CMD_NAME}] Panel not available; UI placement skipped.")
+        return
 
     control = panel.controls.addCommand(cmd_def)
     control.isPromoted = IS_PROMOTED
@@ -118,23 +109,14 @@ def start():
 
 def stop():
     try:
-        workspace = ui.workspaces.itemById(WORKSPACE_ID)
-        if not workspace:
-            return
+        # remove_from_panel cleans up the empty panel but never attempts to
+        # delete FusionDocTab (it only deletes the tab if it has zero panels,
+        # which will never be true for the built-in Drawing workspace tab).
+        futil.remove_from_panel(WORKSPACE_ID, PANEL_ID, TAB_ID, CMD_ID)
 
-        toolbar_tab = workspace.toolbarTabs.itemById(TAB_ID)
-        panel = toolbar_tab.toolbarPanels.itemById(PANEL_ID) if toolbar_tab else None
-        command_control = panel.controls.itemById(CMD_ID) if panel else None
         command_definition = ui.commandDefinitions.itemById(CMD_ID)
-
-        if command_control:
-            command_control.deleteMe()
         if command_definition:
             command_definition.deleteMe()
-        # Delete our panel when it's empty, but never touch FusionDocTab — it
-        # is a native Fusion tab and belongs to the Drawing workspace.
-        if panel and panel.controls.count == 0:
-            panel.deleteMe()
 
         futil.log(f"{CMD_NAME} command stopped")
     except Exception as exc:
